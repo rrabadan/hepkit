@@ -8,14 +8,12 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "catboost>=1.2.8",
     "hist[plot]>=2.8.1",
     "matplotlib>=3.10.3",
     "mplhep>=0.3.59",
     "order>=2.1.7",
     "pandas>=2.3.0",
     "scikit-learn>=1.7.0",
-    "shap>=0.48.0",
 ]
 
 [build-system]

@@ -4,7 +4,6 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import shap
 from hist import Hist
 
 from ..histograms import multi_hist1d_comparison
@@ -210,17 +209,3 @@ def plot_signal_efficiency_vs_background_rejection(y_true, y_scores):
     plt.title("Signal Efficiency vs Background Rejection")
     plt.legend(loc="best")
     plt.grid()
-
-
-def plot_shap_summary(shap_values, X):
-    """
-    Plots the summary of SHAP values.
-
-    Parameters:
-    - shap_values (numpy.ndarray): The SHAP values.
-    - X (numpy.ndarray): The input data.
-
-    Returns:
-    None
-    """
-    shap.summary_plot(shap_values, X, show=False)
