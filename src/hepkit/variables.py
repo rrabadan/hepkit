@@ -213,10 +213,25 @@ def arrays_from_vars(
     data: Any,
 ) -> list[np.ndarray]:
     """Extract and transform data arrays from variables."""
+    if not variables:
+        return []
+    
+    # Pre-filter data to only needed columns for performance
+    if hasattr(data, 'columns'):  # pandas DataFrame
+        needed_cols = set()
+        for var in variables:
+            needed_cols.update(var.input_branches)
+        if needed_cols:
+            data_filtered = data[list(needed_cols)]
+        else:
+            data_filtered = data
+    else:
+        # For dict-like objects, keep as-is
+        data_filtered = data
+    
     data_arrays = []
-
     for var in variables:
-        data_array = var.compute_array(data)  # Use the method
+        data_array = var.compute_array(data_filtered)
         data_arrays.append(data_array)
 
     return data_arrays

@@ -131,11 +131,24 @@ def hist1d_from_var(
     # Create empty histogram
     histogram = histogram_from_axes([axis], var.name)
 
+    # Pre-filter data to only needed columns for performance
+    if hasattr(data, 'columns'):  # pandas DataFrame
+        needed_cols = set(var.input_branches)
+        if isinstance(weight, str):
+            needed_cols.add(weight)
+        if needed_cols:
+            data_filtered = data[list(needed_cols)]
+        else:
+            data_filtered = data
+    else:
+        # For dict-like objects, keep as-is
+        data_filtered = data
+
     # Get data using Var's functionality
-    array = var.compute_array(data)
+    array = var.compute_array(data_filtered)
 
     # Handle weights
-    weight_array = _process_weight(weight, data)
+    weight_array = _process_weight(weight, data_filtered)
 
     # Fill histogram
     try:
@@ -175,12 +188,26 @@ def hist_nd_from_vars(
     # Create empty histogram
     histogram = histogram_from_axes(axes, name)
 
+    # Pre-filter data to only needed columns for performance
+    if hasattr(data, 'columns'):  # pandas DataFrame
+        needed_cols = set()
+        for var in variables:
+            needed_cols.update(var.input_branches)
+        if isinstance(weight, str):
+            needed_cols.add(weight)
+        if needed_cols:
+            data_filtered = data[list(needed_cols)]
+        else:
+            data_filtered = data
+    else:
+        # For dict-like objects, keep as-is
+        data_filtered = data
+
     # Get data from all variables
-    # arrays = [var.compute_array(data) for var in variables]
-    arrays = arrays_from_vars(variables, data)
+    arrays = arrays_from_vars(variables, data_filtered)
 
     # Handle weights
-    weight_array = _process_weight(weight, data)
+    weight_array = _process_weight(weight, data_filtered)
 
     # Fill histogram
     try:
