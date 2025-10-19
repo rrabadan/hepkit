@@ -113,7 +113,7 @@ class Var(od.Variable):
             label=label or name.replace("_", " ").title(),
         )
 
-    def compute_from_branches(self, data: dict[str, Any]) -> np.ndarray:
+    def compute_from_branches(self, data: Any) -> np.ndarray:
         """
         Compute this variable's array from branches using its expression.
 
@@ -143,7 +143,7 @@ class Var(od.Variable):
         except Exception as e:
             raise RuntimeError(f"Error computing variable '{self.name}': {e}") from None
 
-    def compute_array(self, data: dict[str, Any]) -> np.ndarray:
+    def compute_array(self, data: Any) -> np.ndarray:
         """
         Compute this variable's data array, with or without transformation.
 
@@ -170,7 +170,7 @@ class Var(od.Variable):
 
         return data[self.input_branches[0]]
 
-    def validate_branches_exist(self, data: dict[str, Any]) -> None:
+    def validate_branches_exist(self, data: Any) -> None:
         """
         Validate that all required branches exist in the data.
 
@@ -183,12 +183,18 @@ class Var(od.Variable):
         if not self.has_input_branches:
             return  # Nothing to validate
 
-        missing_branches = [b for b in self.input_branches if b not in data]
+        # Handle both dict-like objects and pandas DataFrames
+        if hasattr(data, 'columns'):
+            # For pandas DataFrame, check columns
+            missing_branches = [b for b in self.input_branches if b not in data.columns]
+        else:
+            # For dict-like objects
+            missing_branches = [b for b in self.input_branches if b not in data]
         if missing_branches:
             raise ValueError(f"Missing branches for variable '{self.name}': {missing_branches}")
 
 
-def compute_single_var_array(var: Var, data: dict[str, Any]) -> np.ndarray:
+def compute_single_var_array(var: Var, data: Any) -> np.ndarray:
     """
     Compute a single variable's data array (convenience function).
 
@@ -204,7 +210,7 @@ def compute_single_var_array(var: Var, data: dict[str, Any]) -> np.ndarray:
 
 def arrays_from_vars(
     variables: list[Var],
-    data: dict[str, Any],
+    data: Any,
 ) -> list[np.ndarray]:
     """Extract and transform data arrays from variables."""
     data_arrays = []
