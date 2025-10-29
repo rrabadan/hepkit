@@ -7,6 +7,7 @@ import numpy as np
 from hist import Hist
 
 from .variables import Var, arrays_from_vars
+from .plotting import get_color_palette
 
 
 def axis_from_var(var: Var, **kwargs) -> hist.axis.AxesMixin:
@@ -515,8 +516,8 @@ def plot_hist1d_comparison(
     hists: list[Hist],
     legends: list[Hist],
     ax: plt.Axes,
-    histtypes: list[str],
-    colors: list[str],
+    histtypes: list[str] | None = None,
+    colors: list[str] | None = None,
     normalize: bool = True,
     auto_ylim: bool = True,
     ylim_margin: float = 0.05,
@@ -529,8 +530,8 @@ def plot_hist1d_comparison(
         hists: List of histogram objects to plot
         legends: List of legend labels for each histogram
         ax: Matplotlib axes to plot on
-        histtypes: List of histogram types for each plot
-        colors: List of colors for each histogram
+        histtypes: List of histogram types for each plot (default: "step" for all)
+        colors: List of colors for each histogram (default: automatic color palette)
         normalize: Whether to normalize histograms to density (default: True)
         auto_ylim: Automatically set y-axis limits (default: True)
         ylim_margin: Margin factor for y-axis top limit (default: 0.05)
@@ -540,6 +541,12 @@ def plot_hist1d_comparison(
         ValueError: If input lists have different lengths or are empty
         TypeError: If histogram objects are invalid
     """
+    # Set defaults for optional parameters
+    if histtypes is None:
+        histtypes = ["step"] * len(hists)
+    if colors is None:
+        colors = get_color_palette(n_colors=len(hists))
+    
     list_names = ["hists", "legends", "histtypes", "colors"]
     list_lengths = [len(hists), len(legends), len(histtypes), len(colors)]
 
