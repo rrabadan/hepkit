@@ -184,7 +184,7 @@ class Var(od.Variable):
             return  # Nothing to validate
 
         # Handle both dict-like objects and pandas DataFrames
-        if hasattr(data, 'columns'):
+        if hasattr(data, "columns"):
             # For pandas DataFrame, check columns
             missing_branches = [b for b in self.input_branches if b not in data.columns]
         else:
@@ -215,9 +215,9 @@ def arrays_from_vars(
     """Extract and transform data arrays from variables."""
     if not variables:
         return []
-    
+
     # Pre-filter data to only needed columns for performance
-    if hasattr(data, 'columns'):  # pandas DataFrame
+    if hasattr(data, "columns"):  # pandas DataFrame
         needed_cols = set()
         for var in variables:
             needed_cols.update(var.input_branches)
@@ -228,7 +228,7 @@ def arrays_from_vars(
     else:
         # For dict-like objects, keep as-is
         data_filtered = data
-    
+
     data_arrays = []
     for var in variables:
         data_array = var.compute_array(data_filtered)

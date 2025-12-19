@@ -20,21 +20,13 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.black]
-line-length = 100
-target-version = ["py312"]
-include = '\.pyi?$'
-
-[tool.isort]
-profile = "black"
-line_length = 100
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
 lint.select = ["E", "F", "I", "N", "W", "UP", "B"]
 lint.ignore = [
-    "E501", # line too long, handled by black
+    "E501", # line too long, handled by ruff format
     "B006", # Do not use mutable data structures for arguments defaults
     "N803", # Argument name should be lowercase
     "N806", # Variable in function should be lowercase
@@ -51,8 +43,6 @@ exclude = ["build", "dist", "__pycache__", ".venv"]
 [project.optional-dependencies]
 dev = [
     "pre-commit>=3.6.0",
-    "black>=24.3.0",
-    "isort>=5.13.2",
     "ruff>=0.3.4",
     "mypy>=1.9.0",
     "pytest>=8.0.0",

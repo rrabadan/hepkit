@@ -6,8 +6,8 @@ import mplhep
 import numpy as np
 from hist import Hist
 
-from .variables import Var, arrays_from_vars
 from .plotting import get_color_palette
+from .variables import Var, arrays_from_vars
 
 
 def axis_from_var(var: Var, **kwargs) -> hist.axis.AxesMixin:
@@ -106,7 +106,7 @@ def histogram_from_axes(
 
 def hist1d_from_var(
     var: Var,
-    data: dict[str, Any],
+    data: Any,
     weight: str | np.ndarray | None = None,
     **kwargs,
 ) -> Hist:
@@ -133,7 +133,7 @@ def hist1d_from_var(
     histogram = histogram_from_axes([axis], var.name)
 
     # Pre-filter data to only needed columns for performance
-    if hasattr(data, 'columns'):  # pandas DataFrame
+    if hasattr(data, "columns"):  # pandas DataFrame
         needed_cols = set(var.input_branches)
         if isinstance(weight, str):
             needed_cols.add(weight)
@@ -162,7 +162,7 @@ def hist1d_from_var(
 
 def hist_nd_from_vars(
     variables: list[Var],
-    data: dict[str, Any],
+    data: Any,
     name: str,
     weight: str | np.ndarray | None = None,
     **kwargs,
@@ -190,7 +190,7 @@ def hist_nd_from_vars(
     histogram = histogram_from_axes(axes, name)
 
     # Pre-filter data to only needed columns for performance
-    if hasattr(data, 'columns'):  # pandas DataFrame
+    if hasattr(data, "columns"):  # pandas DataFrame
         needed_cols = set()
         for var in variables:
             needed_cols.update(var.input_branches)
@@ -219,7 +219,7 @@ def hist_nd_from_vars(
     return histogram
 
 
-def _process_weight(weight: str | np.ndarray | None, arr: dict[str, Any]) -> np.ndarray | None:
+def _process_weight(weight: str | np.ndarray | None, arr: Any) -> np.ndarray | None:
     """
     Process weight parameter into a weight array.
 
@@ -546,7 +546,7 @@ def plot_hist1d_comparison(
         histtypes = ["step"] * len(hists)
     if colors is None:
         colors = get_color_palette(n_colors=len(hists))
-    
+
     list_names = ["hists", "legends", "histtypes", "colors"]
     list_lengths = [len(hists), len(legends), len(histtypes), len(colors)]
 
@@ -676,7 +676,10 @@ def multi_hist1d_comparison(
 
     # Create figure and axes
     fig, axes = plt.subplots(
-        nrows=num_rows, ncols=num_cols, figsize=figsize, squeeze=False  # Always return 2D array
+        nrows=num_rows,
+        ncols=num_cols,
+        figsize=figsize,
+        squeeze=False,  # Always return 2D array
     )
 
     # Flatten axes for easier iteration
