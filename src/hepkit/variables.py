@@ -130,15 +130,15 @@ class Var(od.Variable):
         """
 
         # Check if we have an expression
-        if self.expression is None:
+        if self._expression is None:
             raise AttributeError(f"Variable '{self.name}' does not have an 'expression' attribute")
 
         try:
             branch_data = [data[b] for b in self.input_branches]
             if len(self.input_branches) == 1:
-                result = self.expression(branch_data[0])
+                result = self._expression(branch_data[0])
             else:
-                result = self.expression(*branch_data)
+                result = self._expression(*branch_data)
             return result
         except Exception as e:
             raise RuntimeError(f"Error computing variable '{self.name}': {e}") from None
@@ -168,7 +168,7 @@ class Var(od.Variable):
             # Use transformation
             return self.compute_from_branches(data)
 
-        return data[self.input_branches[0]]
+        return np.asarray(data[self.input_branches[0]])
 
     def validate_branches_exist(self, data: Any) -> None:
         """

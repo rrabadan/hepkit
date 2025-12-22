@@ -50,6 +50,23 @@ def test_var_compute_single_branch():
     np.testing.assert_array_equal(result, expected)
 
 
+def test_var_compute_array_dict():
+    """Test compute_array with dictionary of arrays/lists for non-computed variables."""
+    # Test with numpy arrays
+    var = Var(name="pt", input_branches="lep_pt")
+    data_arrays = {"lep_pt": np.array([10.0, 20.0, 30.0])}
+    result = var.compute_array(data_arrays)
+    expected = np.array([10.0, 20.0, 30.0])
+    np.testing.assert_array_equal(result, expected)
+    assert isinstance(result, np.ndarray)
+
+    # Test with lists
+    data_lists = {"lep_pt": [10.0, 20.0, 30.0]}
+    result = var.compute_array(data_lists)
+    np.testing.assert_array_equal(result, expected)
+    assert isinstance(result, np.ndarray)
+
+
 def test_var_with_pandas():
     """Test that Var works with pandas DataFrames."""
     var = Var(name="x", input_branches="a")
@@ -57,6 +74,7 @@ def test_var_with_pandas():
 
     result = var.compute_array(df)
     np.testing.assert_array_equal(result, np.array([1, 2, 3]))
+    assert isinstance(result, np.ndarray)
 
 
 def test_missing_branches_raises():
