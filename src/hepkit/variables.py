@@ -139,7 +139,7 @@ class Var(od.Variable):
                 result = self._expression(branch_data[0])
             else:
                 result = self._expression(*branch_data)
-            return result
+            return np.asarray(result)
         except Exception as e:
             raise RuntimeError(f"Error computing variable '{self.name}': {e}") from None
 
@@ -166,9 +166,15 @@ class Var(od.Variable):
 
         if self.is_computed:
             # Use transformation
-            return self.compute_from_branches(data)
+            array = self.compute_from_branches(data)
+        else:
+            array = np.asarray(data[self.input_branches[0]])
 
-        return np.asarray(data[self.input_branches[0]])
+        # Convert to int if variable is discrete
+        if self.x_discrete:
+            array = array.astype(int)
+
+        return array
 
     def validate_branches_exist(self, data: Any) -> None:
         """

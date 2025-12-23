@@ -67,6 +67,30 @@ def test_var_compute_array_dict():
     assert isinstance(result, np.ndarray)
 
 
+def test_var_compute_array_discrete():
+    """Test that discrete variables convert arrays to int type."""
+    # Test non-computed discrete variable
+    var = Var(name="n_jets", input_branches="jet_count", x_discrete=True)
+    data = {"jet_count": np.array([1.0, 2.5, 3.9])}  # Float values
+    result = var.compute_array(data)
+    expected = np.array([1, 2, 3], dtype=int)  # Should be converted to int
+    np.testing.assert_array_equal(result, expected)
+    assert result.dtype == np.int_
+
+    # Test computed discrete variable
+    var_computed = Var(
+        name="n_leps",
+        input_branches=["lep1", "lep2"],
+        expression=lambda l1, l2: np.sum([l1, l2], axis=0).astype(int),
+        x_discrete=True,
+    )
+    data_computed = {"lep1": np.array([True, False]), "lep2": np.array([True, True])}
+    result_computed = var_computed.compute_array(data_computed)
+    expected_computed = np.array([2, 1], dtype=int)
+    np.testing.assert_array_equal(result_computed, expected_computed)
+    assert result_computed.dtype == np.int_
+
+
 def test_var_with_pandas():
     """Test that Var works with pandas DataFrames."""
     var = Var(name="x", input_branches="a")
