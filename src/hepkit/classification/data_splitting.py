@@ -78,7 +78,7 @@ def split_train_test_by_id_hash(
 
     # For single numeric column, use direct numeric hash
     if len(id_columns) == 1 and pd.api.types.is_numeric_dtype(id_df[id_columns[0]]):
-        values = id_df[id_columns[0]].values
+        values = id_df[id_columns[0]].astype(np.uint64).values
         hashes = values * np.uint64(2654435761)  # Knuth's multiplicative hash
     else:
         # String-based approach

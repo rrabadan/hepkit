@@ -398,7 +398,7 @@ def plot_learning_curve(
 
     ax.scatter(best_iter, val_metrics[metric][best_iter], c=color)
     ax.set_xlabel("Iteration")
-    ax.set_ylabel(metric.capitalize())
+    ax.set_ylabel(metric)
     ax.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
