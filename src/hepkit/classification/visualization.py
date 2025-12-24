@@ -17,7 +17,7 @@ def plot_correlations(
     xlabels: Sequence[str] | None = None,
     fig_size: tuple[float, float] = (5, 5),
     **kwargs: Any,
-) -> None:
+) -> plt.Figure:
     """
     Plot a correlation matrix heatmap for the given DataFrame.
     Parameters:
@@ -28,7 +28,7 @@ def plot_correlations(
     - fig_size (tuple, optional): The size of the figure. Default is (5, 5).
     - **kwargs: Additional keyword arguments to be passed to the correlation calculation.
     Returns:
-    - None
+    - matplotlib.figure.Figure: The figure object containing the plot
     """
 
     data = df.copy()
@@ -57,7 +57,7 @@ def plot_correlations(
         ax.grid(False)
 
     # save_fig(fig_id)
-    return None
+    return plt.gcf()
 
 
 def plot_signal_background_comparison(
@@ -68,7 +68,7 @@ def plot_signal_background_comparison(
     histtypes: list[str] | None = None,
     colors: list[str] | None = None,
     **kwargs,
-) -> tuple[plt.Figure, list[plt.Axes]]:
+) -> plt.Figure:
     """
     Quick comparison between signal and background histograms.
 
@@ -80,19 +80,23 @@ def plot_signal_background_comparison(
         histtypes: List of histogram types (default: ["step", "stepfilled"])
         colors: List of colors (default: ["red", "blue"])
         **kwargs: Additional arguments passed to multi_hist1d_comparison
+
+    Returns:
+        matplotlib.figure.Figure: The figure object containing the plot
     """
     if histtypes is None:
         histtypes = ["step", "step"]
     if colors is None:
         colors = ["red", "blue"]
 
-    return multi_hist1d_comparison(
+    fig, _ = multi_hist1d_comparison(
         hists=[signal_hists, background_hists],
         legends=[signal_label, background_label],
         histtypes=histtypes,
         colors=colors,
         **kwargs,
     )
+    return fig
 
 
 def plot_train_test_response(
@@ -105,7 +109,7 @@ def plot_train_test_response(
     log_y=True,
     fig_size=(8, 6),
     xlabel="Classifier Score",
-):
+) -> plt.Figure:
     """
     Compare the classifier response on training and testing data.
     Parameters:
@@ -119,7 +123,7 @@ def plot_train_test_response(
     - fig_size: Figure size as (width, height) tuple (default: (8, 6)).
     - xlabel: Label for the x-axis (default: "Classifier Score").
     Returns:
-    None
+    matplotlib.figure.Figure: The figure object containing the plot
     """
     decisions = []
     for X, y in ((X_train, y_train), (X_test, y_test)):
@@ -175,8 +179,10 @@ def plot_train_test_response(
     if log_y:
         plt.yscale("log")
 
+    return plt.gcf()
 
-def plot_roc_auc(y_true, y_scores, labels=None, style="standard", fig_size=(8, 6)):
+
+def plot_roc_auc(y_true, y_scores, labels=None, style="standard", fig_size=(8, 6)) -> plt.Figure:
     """
     Plot ROC curve(s) with AUC.
 
@@ -262,7 +268,7 @@ def plot_roc_auc(y_true, y_scores, labels=None, style="standard", fig_size=(8, 6
     return plt.gcf()
 
 
-def plot_signal_efficiency_vs_background_rejection(y_true, y_scores, labels=None):
+def plot_signal_efficiency_vs_background_rejection(y_true, y_scores, labels=None) -> plt.Figure:
     """
     Plot signal efficiency vs background rejection (HEP style ROC).
 
@@ -283,7 +289,7 @@ def plot_feature_importance(
     importances: np.ndarray | list[float] | None = None,
     top_n: int | None = None,
     fig_size: tuple[int, int] = (8, 6),
-):
+) -> plt.Figure:
     """
     Plot feature importance for a trained model.
 
@@ -335,3 +341,66 @@ def plot_feature_importance(
     plt.tight_layout()
 
     return plt.gcf()
+
+
+def plot_learning_curve(
+    classifier,
+    train_metrics: dict[str, list[float]] | None = None,
+    val_metrics: dict[str, list[float]] | None = None,
+    metric: str = "logloss",
+    color: str = "green",
+    fig_size: tuple[int, int] = (8, 6),
+) -> plt.Figure:
+    """
+    Plots the learning curve for a given model. Supports CatBoost, XGBoost, and custom metrics.
+
+    Parameters:
+    - model: Trained model (CatBoost, XGBoost, or other).
+    - train_metrics: Dict of training metrics (e.g., {"logloss": [0.5, 0.4, ...]}).
+    - val_metrics: Dict of validation metrics (same format).
+    - metric: Metric name to plot (must exist in val_metrics).
+    - color: Plot color.
+    - fig_size: Figure size as (width, height) tuple (default: (8, 6)).
+
+    Returns: The figure containing the plot.
+    """
+    fig, ax = plt.subplots(figsize=fig_size)
+
+    # Auto-extract metrics if not provided
+    if val_metrics is None:
+        if hasattr(classifier, "get_evals_result"):  # CatBoost
+            evals = classifier.get_evals_result()
+            val_metrics = evals.get("validation", {})
+            train_metrics = evals.get("learn", {})
+        elif hasattr(classifier, "evals_result_"):  # XGBoost
+            evals = classifier.evals_result_
+            val_metrics = evals.get("validation_0", {})
+            train_metrics = evals.get("train", {})
+        else:
+            raise ValueError(
+                "Model does not support automatic metric extraction. Provide train_metrics and val_metrics manually."
+            )
+
+    if metric not in val_metrics:
+        raise ValueError(f"Metric '{metric}' not found in validation metrics.")
+
+    n = len(val_metrics[metric])
+    ax.plot(range(n), val_metrics[metric], label="Validation", c=color)
+
+    if train_metrics and metric in train_metrics:
+        ax.plot(range(n), train_metrics[metric], label="Training", c=color, linestyle="--")
+
+    # Best iteration (max for AUC-like, min for loss-like)
+    if metric.lower() in ["auc", "accuracy"]:
+        best_iter = int(np.argmax(val_metrics[metric]))
+    else:
+        best_iter = int(np.argmin(val_metrics[metric]))
+
+    ax.scatter(best_iter, val_metrics[metric][best_iter], c=color)
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel(metric.capitalize())
+    ax.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+
+    return fig
