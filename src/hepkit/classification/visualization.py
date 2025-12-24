@@ -275,3 +275,63 @@ def plot_signal_efficiency_vs_background_rejection(y_true, y_scores, labels=None
         matplotlib.figure.Figure: The figure object containing the plot
     """
     return plot_roc_auc(y_true, y_scores, labels=labels, style="rejection")
+
+
+def plot_feature_importance(
+    model,
+    feature_names: list[str] | None = None,
+    importances: np.ndarray | list[float] | None = None,
+    top_n: int | None = None,
+    fig_size: tuple[int, int] = (8, 6),
+):
+    """
+    Plot feature importance for a trained model.
+
+    Args:
+        model: Trained model with feature_importances_ attribute (e.g., sklearn models)
+        feature_names: List of feature names. If None, uses generic names.
+        top_n: Number of top features to display. If None, shows all.
+        fig_size: Figure size as (width, height) tuple (default: (8, 6)).
+
+    Returns:
+        matplotlib.figure.Figure: The figure object containing the plot
+    """
+    if importances is not None:
+        importances = np.array(importances)
+    else:
+        # Extract feature importances
+        if hasattr(model, "feature_importances_"):
+            importances = model.feature_importances_
+        elif hasattr(model, "coef_"):
+            # For linear models, use absolute coefficients as importance
+            importances = np.abs(model.coef_[0] if model.coef_.ndim > 1 else model.coef_)
+        else:
+            raise ValueError("Model does not have feature_importances_ or coef_ attribute")
+
+    # Create feature names if not provided
+    if feature_names is None:
+        feature_names = [f"Feature {i}" for i in range(len(importances))]
+
+    if len(importances) != len(feature_names):
+        raise ValueError("Length of importances must match feature_names.")
+
+    # Create DataFrame for easy sorting
+    importance_df = pd.DataFrame({"feature": feature_names, "importance": importances})
+
+    # Sort by importance
+    importance_df = importance_df.sort_values("importance", ascending=True)
+
+    # Select top_n if specified
+    if top_n is not None:
+        importance_df = importance_df.tail(top_n)
+
+    # Plot
+    plt.figure(figsize=fig_size)
+    plt.barh(importance_df["feature"], importance_df["importance"])
+    plt.xlabel("Feature Importance")
+    plt.ylabel("Features")
+    plt.title("Feature Importance")
+    plt.grid(axis="x", alpha=0.3)
+    plt.tight_layout()
+
+    return plt.gcf()
