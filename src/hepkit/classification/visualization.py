@@ -95,7 +95,17 @@ def plot_signal_background_comparison(
     )
 
 
-def plot_train_test_response(clf, X_train, y_train, X_test, y_test, bins=30, log_y=True):
+def plot_train_test_response(
+    clf,
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+    bins=30,
+    log_y=True,
+    fig_size=(8, 6),
+    xlabel="Classifier Score",
+):
     """
     Compare the classifier response on training and testing data.
     Parameters:
@@ -105,6 +115,9 @@ def plot_train_test_response(clf, X_train, y_train, X_test, y_test, bins=30, log
     - X_test: The testing data features.
     - y_test: The testing data labels.
     - bins: The number of bins for the histogram (default: 30).
+    - log_y: Whether to use log scale for y-axis (default: True).
+    - fig_size: Figure size as (width, height) tuple (default: (8, 6)).
+    - xlabel: Label for the x-axis (default: "Classifier Score").
     Returns:
     None
     """
@@ -118,7 +131,7 @@ def plot_train_test_response(clf, X_train, y_train, X_test, y_test, bins=30, log
     high = max(np.max(d) for d in decisions)
     low_high = (low, high)
 
-    plt.figure()
+    plt.figure(figsize=fig_size)
     plt.hist(
         decisions[0],
         color="r",
@@ -153,7 +166,7 @@ def plot_train_test_response(clf, X_train, y_train, X_test, y_test, bins=30, log
 
     plt.errorbar(center, hist, yerr=err, fmt="o", c="b", label="Background (test)")
 
-    plt.xlabel("BDT output")
+    plt.xlabel(xlabel)
     plt.ylabel("Arbitrary units")
     plt.legend(loc="best")
     plt.grid()
@@ -163,49 +176,102 @@ def plot_train_test_response(clf, X_train, y_train, X_test, y_test, bins=30, log
         plt.yscale("log")
 
 
-def plot_roc_auc(y_true, y_scores, label=None):
-    """Plot ROC curve with AUC."""
-    fpr, tpr, _, auc = calculate_roc_curve(y_true, y_scores)
+def plot_roc_auc(y_true, y_scores, labels=None, style="standard", fig_size=(8, 6)):
+    """
+    Plot ROC curve(s) with AUC.
 
-    plt.figure()
-    plt.plot(fpr, tpr, lw=2, label=f"ROC (AUC = {auc:.3f})" if label is None else label)
-    plt.plot([0, 1], [0, 1], "k--", lw=1)  # Diagonal line
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title("Receiver Operating Characteristic")
-    plt.legend(loc="lower right")
-    plt.grid()
+    Args:
+        y_true: True labels (single array or list of arrays for comparison)
+        y_scores: Predicted scores (single array or list of arrays)
+        labels: Label(s) for the curve(s) (single string or list of strings)
+        style: Plotting style - 'standard' (FPR vs TPR), 'efficiency' (Background Eff vs Signal Eff),
+               'rejection' (Signal Eff vs Background Rejection)
+        fig_size: Figure size as (width, height) tuple (default: (8, 6))
 
+    Returns:
+        matplotlib.figure.Figure: The figure object containing the plot
+    """
 
-def plot_roc_auc_comparison(y_true_list, y_scores_list, labels):
-    """Compare multiple ROC curves."""
-    plt.figure()
-    for y_true, y_scores, label in zip(y_true_list, y_scores_list, labels, strict=False):
+    plt.figure(figsize=fig_size)
+
+    # Handle single curve
+    if not isinstance(y_true, list):
         fpr, tpr, _, auc = calculate_roc_curve(y_true, y_scores)
-        plt.plot(fpr, tpr, lw=2, label=f"{label} (AUC = {auc:.3f})")
+        if style == "standard":
+            x_data, y_data = fpr, tpr
+            xlabel, ylabel = "False Positive Rate", "True Positive Rate"
+            title = "Receiver Operating Characteristic"
+            label = f"ROC (AUC = {auc:.3f})" if labels is None else labels
+        elif style == "efficiency":
+            x_data, y_data = fpr, tpr  # Same data, different labels
+            xlabel, ylabel = "Background Efficiency", "Signal Efficiency"
+            title = "Signal Efficiency vs Background Efficiency"
+            label = f"AUC = {auc:.3f}" if labels is None else labels
+        elif style == "rejection":
+            x_data, y_data = tpr, 1 - fpr
+            xlabel, ylabel = "Signal Efficiency", "Background Rejection"
+            title = "Signal Efficiency vs Background Rejection"
+            label = f"AUC = {auc:.3f}" if labels is None else labels
+        else:
+            raise ValueError(f"Unknown style: {style}")
+        plt.plot(x_data, y_data, lw=2, label=label)
+    else:
+        # Handle multiple curves
+        if labels is None:
+            labels = [f"Model {i + 1}" for i in range(len(y_true))]
+        for yt, ys, lbl in zip(y_true, y_scores, labels, strict=False):
+            fpr, tpr, _, auc = calculate_roc_curve(yt, ys)
+            if style == "standard":
+                x_data, y_data = fpr, tpr
+                label = f"{lbl} (AUC = {auc:.3f})"
+            elif style == "efficiency":
+                x_data, y_data = fpr, tpr
+                label = f"{lbl} (AUC = {auc:.3f})"
+            elif style == "rejection":
+                x_data, y_data = tpr, 1 - fpr
+                label = f"{lbl} (AUC = {auc:.3f})"
+            else:
+                raise ValueError(f"Unknown style: {style}")
+            plt.plot(x_data, y_data, lw=2, label=label)
 
-    plt.plot([0, 1], [0, 1], "k--", lw=1)
+        if style == "standard":
+            xlabel, ylabel = "False Positive Rate", "True Positive Rate"
+            title = "ROC Curve Comparison"
+        elif style == "efficiency":
+            xlabel, ylabel = "Background Efficiency", "Signal Efficiency"
+            title = "Signal Efficiency vs Background Efficiency Comparison"
+        elif style == "rejection":
+            xlabel, ylabel = "Signal Efficiency", "Background Rejection"
+            title = "Signal Efficiency vs Background Rejection Comparison"
+
+    if style == "standard":
+        plt.plot([0, 1], [0, 1], "k--", lw=1)  # Diagonal line (no skill classifier)
+    elif style == "efficiency":
+        plt.plot([0, 1], [0, 1], "k--", lw=1)  # Same diagonal
+    elif style == "rejection":
+        plt.plot([0, 1], [1, 0], "k--", lw=1)  # Diagonal from (0,1) to (1,0)
+
     plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title("ROC Curve Comparison")
-    plt.legend(loc="lower right")
-    plt.grid()
-
-
-def plot_signal_efficiency_vs_background_rejection(y_true, y_scores):
-    """Plot signal efficiency vs background rejection (HEP style ROC)."""
-    fpr, tpr, _, auc = calculate_roc_curve(y_true, y_scores)
-    background_rejection = 1 - fpr
-    signal_efficiency = tpr
-
-    plt.figure()
-    plt.plot(signal_efficiency, background_rejection, lw=2, label=f"AUC = {auc:.3f}")
-    plt.xlabel("Signal Efficiency")
-    plt.ylabel("Background Rejection")
-    plt.title("Signal Efficiency vs Background Rejection")
+    plt.ylim([0.0, 1.05] if style != "rejection" else [0.0, 1.05])
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
     plt.legend(loc="best")
     plt.grid()
+
+    return plt.gcf()
+
+
+def plot_signal_efficiency_vs_background_rejection(y_true, y_scores, labels=None):
+    """
+    Plot signal efficiency vs background rejection (HEP style ROC).
+
+    Args:
+        y_true: True labels (single array or list of arrays for comparison)
+        y_scores: Predicted scores (single array or list of arrays)
+        labels: Label(s) for the curve(s) (single string or list of strings)
+
+    Returns:
+        matplotlib.figure.Figure: The figure object containing the plot
+    """
+    return plot_roc_auc(y_true, y_scores, labels=labels, style="rejection")
